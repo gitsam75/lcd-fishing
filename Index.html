@@ -2,132 +2,316 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Retro LCD Fishing</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro LCD Fishing Game</title>
     <style>
         :root {
-            --lcd-bg: #9ea78d;
-            --lcd-ink: rgba(0, 0, 0, 0.8);
-            --lcd-ghost: rgba(0, 0, 0, 0.05);
+            --lcd-bg: #9ead86;
+            --lcd-ink: rgba(20, 25, 20, 0.9);
+            --lcd-ghost: rgba(20, 25, 20, 0.07);
+            --case-color: #d32f2f;
         }
 
         body {
-            background-color: #333;
+            background-color: #1a1a1a;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
+            justify-content: center;
             height: 100vh;
+            margin: 0;
             font-family: 'Courier New', Courier, monospace;
+            color: white;
+            user-select: none;
         }
 
-        /* Das Gehäuse des Spielcomputers */
-        #game-boy {
-            background-color: #cc2222;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 10px 0 #881111;
+        #game-container {
+            background-color: var(--case-color);
+            padding: 30px;
+            border-radius: 25px;
+            box-shadow: inset -5px -5px 10px rgba(0,0,0,0.5), 5px 10px 20px rgba(0,0,0,0.8);
+            border: 4px solid #b71c1c;
+            width: 450px;
             text-align: center;
         }
 
-        /* Der LCD Bildschirm */
-        #screen {
+        .brand {
+            font-style: italic;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #ffcdd2;
+            font-size: 14px;
+        }
+
+        #lcd-screen {
             background-color: var(--lcd-bg);
             width: 400px;
-            height: 200px;
-            border: 5px solid #444;
+            height: 250px;
+            margin: 0 auto;
+            border: 10px solid #333;
             position: relative;
             overflow: hidden;
+            border-radius: 5px;
         }
 
-        /* Steg-Grafik */
-        #steg {
+        /* UI Elements */
+        #score-display {
             position: absolute;
-            bottom: 40px;
+            top: 10px;
+            right: 15px;
+            color: var(--lcd-ink);
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        /* Steg */
+        #pier {
+            position: absolute;
+            top: 120px;
+            left: 0;
             width: 100%;
-            height: 10px;
-            background: var(--lcd-ink);
+            height: 4px;
+            background-color: var(--lcd-ink);
         }
 
-        /* Fischer-Sprite */
-        #fisher {
+        /* Fischer Segmente (8 Positionen) */
+        .fisher-seg {
             position: absolute;
-            bottom: 50px;
+            top: 65px;
             width: 30px;
-            height: 60px;
-            background: var(--lcd-ink);
-            transition: left 0.05s; /* Sofortiger Sprung */
+            height: 55px;
+            font-size: 40px;
+            display: none;
+            color: var(--lcd-ink);
+            text-align: center;
         }
 
-        /* Bedienknöpfe */
+        /* Korb (Fest auf Position 3) */
+        #basket {
+            position: absolute;
+            top: 100px;
+            left: 160px; 
+            font-size: 20px;
+            color: var(--lcd-ink);
+        }
+
+        /* Reiher Segmente (0-2 Annäherung) */
+        .bird-seg {
+            position: absolute;
+            font-size: 25px;
+            display: none;
+            color: var(--lcd-ink);
+        }
+
+        /* Fische im Wasser */
+        .fish {
+            position: absolute;
+            font-size: 20px;
+            display: none;
+            color: var(--lcd-ink);
+        }
+
+        /* Steuerung */
         .controls {
             margin-top: 30px;
             display: flex;
-            justify-content: space-between;
+            justify-content: space-around;
+            align-items: center;
         }
 
-        button {
+        .d-pad {
+            display: flex;
+            gap: 20px;
+        }
+
+        .btn {
             width: 60px;
             height: 60px;
             border-radius: 50%;
-            border: none;
             background: #222;
+            border: 3px solid #111;
             color: white;
             font-weight: bold;
             cursor: pointer;
-            box-shadow: 0 4px 0 #000;
+            box-shadow: 0 5px 0 #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
         }
 
-        button:active {
-            transform: translateY(2px);
+        .btn:active {
+            transform: translateY(3px);
             box-shadow: 0 2px 0 #000;
         }
 
-        #score {
-            font-size: 24px;
-            margin-bottom: 10px;
-            color: var(--lcd-ink);
+        .action-btn {
+            width: 80px;
+            height: 80px;
+            background: #b71c1c;
+            border-color: #7f0000;
+        }
+
+        .label {
+            font-size: 10px;
+            margin-top: 5px;
+            color: #333;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
 
-<div id="game-boy">
-    <div id="score">Fische: 0 / 10</div>
-    <div id="screen">
-        <div id="steg"></div>
-        <div id="fisher" style="left: 0px;"></div>
-        </div>
+<div id="game-container">
+    <div class="brand">L-C-D FISHING '84</div>
+    
+    <div id="lcd-screen">
+        <div id="score-display">00</div>
+        <div id="pier"></div>
+        <div id="basket">|_|</div>
+
+        <div id="f0" class="fisher-seg" style="left: 10px;">&Aring;</div>
+        <div id="f1" class="fisher-seg" style="left: 60px;">&Aring;</div>
+        <div id="f2" class="fisher-seg" style="left: 110px;">&Aring;</div>
+        <div id="f3" class="fisher-seg" style="left: 160px;">&Aring;</div>
+        <div id="f4" class="fisher-seg" style="left: 210px;">&Aring;</div>
+        <div id="f5" class="fisher-seg" style="left: 260px;">&Aring;</div>
+        <div id="f6" class="fisher-seg" style="left: 310px;">&Aring;</div>
+        <div id="f7" class="fisher-seg" style="left: 360px;">&Aring;</div>
+
+        <div id="b0" class="bird-seg" style="left: 10px; top: 10px;">vVv</div>
+        <div id="b1" class="bird-seg" style="left: 80px; top: 30px;">vVv</div>
+        <div id="b2" class="bird-seg" style="left: 140px; top: 75px;">V</div>
+
+        <div id="fish-shallow" class="fish" style="top: 160px;">&gt;&lt;&gt;</div>
+        <div id="fish-deep" class="fish" style="top: 210px;">&gt;&lt;&gt;&lt;</div>
+    </div>
 
     <div class="controls">
-        <button onclick="move(-1)">L</button>
-        <button onclick="move(1)">R</button>
-        <button onclick="action()" style="background: #aa2222;">ACTION</button>
+        <div class="d-pad">
+            <div>
+                <div class="btn" onclick="move(-1)">←</div>
+                <div class="label">LINKS</div>
+            </div>
+            <div>
+                <div class="btn" onclick="move(1)">→</div>
+                <div class="label">RECHTS</div>
+            </div>
+        </div>
+        
+        <div>
+            <div class="btn action-btn" onclick="action()">FANG</div>
+            <div class="label">AKTION</div>
+        </div>
     </div>
 </div>
 
 <script>
-    let pos = 0; // 0 bis 7
+    let currentPos = 0;
     let score = 0;
-    let hasFish = false;
-    const fisher = document.getElementById('fisher');
-    const scoreDisplay = document.getElementById('score');
+    let heldFish = null; // 'shallow', 'deep' oder null
+    let birdLevel = 0;   // 0=weg, 1=nahe, 2=am Korb
+    let isCasting = false;
+
+    updateDisplay();
 
     function move(dir) {
-        pos = Math.max(0, Math.min(7, pos + dir));
-        fisher.style.left = (pos * 50) + 'px';
+        if (isCasting) return;
+        currentPos = Math.max(0, Math.min(7, currentPos + dir));
+        updateDisplay();
     }
 
     function action() {
-        // Logik für Angeln, Korb ablegen und Reiher verscheuchen
-        if (pos === 4 && hasFish) { // Beispiel: Korb ist bei Position 4
-            score++;
-            hasFish = false;
-            scoreDisplay.innerText = `Fische: ${score} / 10`;
-            if (score >= 10) alert("Gewonnen!");
-        } else if (!hasFish) {
-            // Simuliere Fangvorgang
-            console.log("Angel ausgeworfen...");
-            // Hier käme die Logik für die Tiefe rein
-            hasFish = true; // Testweise
+        // Logik für den Korb (Pos 3)
+        if (currentPos === 3) {
+            if (heldFish) {
+                score++;
+                heldFish = null;
+                console.log("Fisch abgelegt!");
+            } else if (birdLevel > 0) {
+                birdLevel = 0;
+                console.log("Vogel verscheucht!");
+            }
+        } 
+        // Logik für das Angeln
+        else if (!heldFish && !isCasting) {
+            startFishing();
+        }
+        updateDisplay();
+    }
+
+    function startFishing() {
+        isCasting = true;
+        updateDisplay();
+        
+        // Simuliere LCD Timing
+        setTimeout(() => {
+            if (Math.random() > 0.6) { // 40% Chance flach
+                heldFish = 'shallow';
+                finishCasting();
+            } else {
+                // Warten auf die Tiefe
+                setTimeout(() => {
+                    if (Math.random() > 0.4) { // Chance tief
+                        heldFish = 'deep';
+                    }
+                    finishCasting();
+                }, 800);
+            }
+        }, 600);
+    }
+
+    function finishCasting() {
+        isCasting = false;
+        updateDisplay();
+    }
+
+    // Vogel-Intervall (Gegner-Logik)
+    setInterval(() => {
+        if (Math.random() > 0.7) {
+            birdLevel++;
+            if (birdLevel > 2) {
+                if (score > 0) {
+                    score--;
+                    alert("Der Reiher hat einen Fisch geklaut!");
+                }
+                birdLevel = 0;
+            }
+            updateDisplay();
+        }
+    }, 3000);
+
+    function updateDisplay() {
+        // Alle Segmente ausblenden
+        document.querySelectorAll('.fisher-seg, .bird-seg, .fish').forEach(el => el.style.display = 'none');
+
+        // Aktuellen Fischer zeigen
+        document.getElementById('f' + currentPos).style.display = 'block';
+
+        // Vogel zeigen
+        if (birdLevel > 0) {
+            document.getElementById('b' + (birdLevel-1)).style.display = 'block';
+        }
+
+        // Gefangenen Fisch zeigen
+        if (heldFish === 'shallow') {
+             const fS = document.getElementById('fish-shallow');
+             fS.style.display = 'block';
+             fS.style.left = (currentPos * 50 + 10) + "px";
+        }
+        if (heldFish === 'deep') {
+             const fD = document.getElementById('fish-deep');
+             fD.style.display = 'block';
+             fD.style.left = (currentPos * 50 + 10) + "px";
+        }
+
+        // Score aktualisieren
+        document.getElementById('score-display').innerText = score.toString().padStart(2, '0');
+        
+        if (score >= 10) {
+            alert("GEWONNEN! Du hast 10 Fische im Korb.");
+            score = 0;
+            updateDisplay();
         }
     }
 </script>
