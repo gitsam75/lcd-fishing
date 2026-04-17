@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Retro LCD Fishing</title>
+    <style>
+        :root {
+            --lcd-bg: #9ea78d;
+            --lcd-ink: rgba(0, 0, 0, 0.8);
+            --lcd-ghost: rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            background-color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        /* Das Gehäuse des Spielcomputers */
+        #game-boy {
+            background-color: #cc2222;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 0 #881111;
+            text-align: center;
+        }
+
+        /* Der LCD Bildschirm */
+        #screen {
+            background-color: var(--lcd-bg);
+            width: 400px;
+            height: 200px;
+            border: 5px solid #444;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Steg-Grafik */
+        #steg {
+            position: absolute;
+            bottom: 40px;
+            width: 100%;
+            height: 10px;
+            background: var(--lcd-ink);
+        }
+
+        /* Fischer-Sprite */
+        #fisher {
+            position: absolute;
+            bottom: 50px;
+            width: 30px;
+            height: 60px;
+            background: var(--lcd-ink);
+            transition: left 0.05s; /* Sofortiger Sprung */
+        }
+
+        /* Bedienknöpfe */
+        .controls {
+            margin-top: 30px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        button {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            background: #222;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #000;
+        }
+
+        button:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #000;
+        }
+
+        #score {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: var(--lcd-ink);
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-boy">
+    <div id="score">Fische: 0 / 10</div>
+    <div id="screen">
+        <div id="steg"></div>
+        <div id="fisher" style="left: 0px;"></div>
+        </div>
+
+    <div class="controls">
+        <button onclick="move(-1)">L</button>
+        <button onclick="move(1)">R</button>
+        <button onclick="action()" style="background: #aa2222;">ACTION</button>
+    </div>
+</div>
+
+<script>
+    let pos = 0; // 0 bis 7
+    let score = 0;
+    let hasFish = false;
+    const fisher = document.getElementById('fisher');
+    const scoreDisplay = document.getElementById('score');
+
+    function move(dir) {
+        pos = Math.max(0, Math.min(7, pos + dir));
+        fisher.style.left = (pos * 50) + 'px';
+    }
+
+    function action() {
+        // Logik für Angeln, Korb ablegen und Reiher verscheuchen
+        if (pos === 4 && hasFish) { // Beispiel: Korb ist bei Position 4
+            score++;
+            hasFish = false;
+            scoreDisplay.innerText = `Fische: ${score} / 10`;
+            if (score >= 10) alert("Gewonnen!");
+        } else if (!hasFish) {
+            // Simuliere Fangvorgang
+            console.log("Angel ausgeworfen...");
+            // Hier käme die Logik für die Tiefe rein
+            hasFish = true; // Testweise
+        }
+    }
+</script>
+
+</body>
+</html>
