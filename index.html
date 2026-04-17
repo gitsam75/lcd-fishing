@@ -2,318 +2,249 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Retro LCD Fishing Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LCD Ocean Catcher 1984</title>
     <style>
         :root {
-            --lcd-bg: #9ead86;
-            --lcd-ink: rgba(20, 25, 20, 0.9);
-            --lcd-ghost: rgba(20, 25, 20, 0.07);
-            --case-color: #d32f2f;
+            --lcd-bg: #a4b08d;
+            --lcd-ink: rgba(30, 35, 30, 0.9);
+            --lcd-ghost: rgba(30, 35, 30, 0.05);
         }
 
-        body {
-            background-color: #1a1a1a;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            font-family: 'Courier New', Courier, monospace;
-            color: white;
-            user-select: none;
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            background-color: #222;
+            display: flex; justify-content: center; align-items: center;
+            overflow: hidden; font-family: sans-serif;
         }
 
-        #game-container {
-            background-color: var(--case-color);
-            padding: 30px;
-            border-radius: 25px;
-            box-shadow: inset -5px -5px 10px rgba(0,0,0,0.5), 5px 10px 20px rgba(0,0,0,0.8);
-            border: 4px solid #b71c1c;
-            width: 450px;
-            text-align: center;
-        }
-
-        .brand {
-            font-style: italic;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #ffcdd2;
-            font-size: 14px;
-        }
-
-        #lcd-screen {
-            background-color: var(--lcd-bg);
-            width: 400px;
-            height: 250px;
-            margin: 0 auto;
-            border: 10px solid #333;
+        /* Fullscreen Game Console */
+        #console {
+            background-color: #c0392b;
+            width: 100vw; height: 100vh;
+            display: flex; flex-direction: column;
+            border: 10px solid #a93226; box-sizing: border-box;
             position: relative;
-            overflow: hidden;
-            border-radius: 5px;
         }
 
-        /* UI Elements */
+        /* LCD Screen Area */
+        #screen {
+            flex: 1;
+            background-color: var(--lcd-bg);
+            margin: 20px;
+            border: 15px solid #333;
+            border-radius: 10px;
+            position: relative;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.2);
+        }
+
         #score-display {
+            position: absolute; top: 10px; right: 20px;
+            font-size: 32px; font-weight: bold; color: var(--lcd-ink);
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Characters & Elements */
+        .sprite {
             position: absolute;
-            top: 10px;
-            right: 15px;
             color: var(--lcd-ink);
-            font-size: 24px;
             font-weight: bold;
+            transition: all 0.1s steps(1); /* Typischer LCD Sprung-Effekt */
+            white-space: nowrap;
         }
 
-        /* Steg */
-        #pier {
-            position: absolute;
-            top: 120px;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background-color: var(--lcd-ink);
-        }
+        #fisher { font-size: 60px; bottom: 110px; z-index: 10; }
+        #basket { font-size: 40px; bottom: 110px; left: 50%; transform: translateX(-50%); }
+        #pier { position: absolute; bottom: 110px; width: 100%; height: 4px; background: var(--lcd-ink); }
+        
+        .fish { font-size: 30px; bottom: 40px; }
+        .bird { font-size: 45px; top: 20px; }
 
-        /* Fischer Segmente (8 Positionen) */
-        .fisher-seg {
-            position: absolute;
-            top: 65px;
-            width: 30px;
-            height: 55px;
-            font-size: 40px;
-            display: none;
-            color: var(--lcd-ink);
-            text-align: center;
-        }
-
-        /* Korb (Fest auf Position 3) */
-        #basket {
-            position: absolute;
-            top: 100px;
-            left: 160px; 
-            font-size: 20px;
-            color: var(--lcd-ink);
-        }
-
-        /* Reiher Segmente (0-2 Annäherung) */
-        .bird-seg {
-            position: absolute;
-            font-size: 25px;
-            display: none;
-            color: var(--lcd-ink);
-        }
-
-        /* Fische im Wasser */
-        .fish {
-            position: absolute;
-            font-size: 20px;
-            display: none;
-            color: var(--lcd-ink);
-        }
-
-        /* Steuerung */
+        /* Controls */
         .controls {
-            margin-top: 30px;
+            height: 25%;
             display: flex;
             justify-content: space-around;
             align-items: center;
-        }
-
-        .d-pad {
-            display: flex;
-            gap: 20px;
+            background: #a93226;
+            padding-bottom: 20px;
         }
 
         .btn {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: #222;
-            border: 3px solid #111;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 5px 0 #000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
+            width: 80px; height: 80px;
+            background: #333; border-radius: 50%;
+            color: white; font-weight: bold;
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 6px 0 #111;
+            cursor: pointer; user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .btn:active {
-            transform: translateY(3px);
-            box-shadow: 0 2px 0 #000;
-        }
+        .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #111; }
+        .btn-action { width: 100px; height: 100px; background: #222; font-size: 1.2em; }
 
-        .action-btn {
-            width: 80px;
-            height: 80px;
-            background: #b71c1c;
-            border-color: #7f0000;
-        }
-
-        .label {
-            font-size: 10px;
-            margin-top: 5px;
-            color: #333;
-            font-weight: bold;
-        }
+        .label { color: #eee; font-size: 12px; margin-top: 5px; text-align: center; }
     </style>
 </head>
 <body>
 
-<div id="game-container">
-    <div class="brand">L-C-D FISHING '84</div>
-    
-    <div id="lcd-screen">
+<div id="console">
+    <div id="screen">
         <div id="score-display">00</div>
         <div id="pier"></div>
-        <div id="basket">|_|</div>
-
-        <div id="f0" class="fisher-seg" style="left: 10px;">&Aring;</div>
-        <div id="f1" class="fisher-seg" style="left: 60px;">&Aring;</div>
-        <div id="f2" class="fisher-seg" style="left: 110px;">&Aring;</div>
-        <div id="f3" class="fisher-seg" style="left: 160px;">&Aring;</div>
-        <div id="f4" class="fisher-seg" style="left: 210px;">&Aring;</div>
-        <div id="f5" class="fisher-seg" style="left: 260px;">&Aring;</div>
-        <div id="f6" class="fisher-seg" style="left: 310px;">&Aring;</div>
-        <div id="f7" class="fisher-seg" style="left: 360px;">&Aring;</div>
-
-        <div id="b0" class="bird-seg" style="left: 10px; top: 10px;">vVv</div>
-        <div id="b1" class="bird-seg" style="left: 80px; top: 30px;">vVv</div>
-        <div id="b2" class="bird-seg" style="left: 140px; top: 75px;">V</div>
-
-        <div id="fish-shallow" class="fish" style="top: 160px;">&gt;&lt;&gt;</div>
-        <div id="fish-deep" class="fish" style="top: 210px;">&gt;&lt;&gt;&lt;</div>
+        <div id="basket">🧺</div>
+        <div id="fisher" class="sprite">🎣</div>
+        <div id="elements-layer"></div>
     </div>
 
     <div class="controls">
-        <div class="d-pad">
-            <div>
-                <div class="btn" onclick="move(-1)">←</div>
-                <div class="label">LINKS</div>
-            </div>
-            <div>
-                <div class="btn" onclick="move(1)">→</div>
-                <div class="label">RECHTS</div>
-            </div>
+        <div onclick="move(-1)">
+            <div class="btn">LEFT</div>
         </div>
-        
-        <div>
-            <div class="btn action-btn" onclick="action()">FANG</div>
-            <div class="label">AKTION</div>
+        <div onclick="action()">
+            <div class="btn btn-action">CATCH</div>
+        </div>
+        <div onclick="move(1)">
+            <div class="btn">RIGHT</div>
         </div>
     </div>
 </div>
 
 <script>
-    let currentPos = 0;
-    let score = 0;
-    let heldFish = null; // 'shallow', 'deep' oder null
-    let birdLevel = 0;   // 0=weg, 1=nahe, 2=am Korb
-    let isCasting = false;
+    const screen = document.getElementById('screen');
+    const fisher = document.getElementById('fisher');
+    const scoreEl = document.getElementById('score-display');
+    const elementsLayer = document.getElementById('elements-layer');
 
-    updateDisplay();
+    let pos = 0; // 0 bis 7
+    let score = 0;
+    let heldFish = null;
+    let fishArray = [];
+    let birdPos = -100; // Startet außerhalb
+    let birdTarget = 50; // Mitte
+    
+    // Audio Context für Retro-Klicks
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playClick(freq = 150, duration = 0.05) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    }
 
     function move(dir) {
-        if (isCasting) return;
-        currentPos = Math.max(0, Math.min(7, currentPos + dir));
-        updateDisplay();
+        pos = Math.max(0, Math.min(7, pos + dir));
+        playClick(200);
+        updateFisher();
+    }
+
+    function updateFisher() {
+        const xPercent = (pos * 12.5) + 6;
+        fisher.style.left = xPercent + "%";
+        fisher.innerText = heldFish ? "👨‍🎨🐟" : "🎣";
     }
 
     function action() {
-        // Logik für den Korb (Pos 3)
-        if (currentPos === 3) {
-            if (heldFish) {
-                score++;
-                heldFish = null;
-                console.log("Fisch abgelegt!");
-            } else if (birdLevel > 0) {
-                birdLevel = 0;
-                console.log("Vogel verscheucht!");
-            }
+        playClick(400);
+        
+        // 1. Am Korb abgeben (Korb ist bei pos 3 oder 4)
+        if ((pos === 3 || pos === 4) && heldFish) {
+            score++;
+            heldFish = null;
+            playClick(600, 0.2);
         } 
-        // Logik für das Angeln
-        else if (!heldFish && !isCasting) {
-            startFishing();
+        // 2. Fisch fangen
+        else if (!heldFish) {
+            checkCatch();
         }
-        updateDisplay();
-    }
-
-    function startFishing() {
-        isCasting = true;
-        updateDisplay();
+        // 3. Vogel verscheuchen
+        if ((pos === 3 || pos === 4) && birdPos > 40 && birdPos < 60) {
+            birdPos = -100;
+            playClick(100, 0.3);
+        }
         
-        // Simuliere LCD Timing
-        setTimeout(() => {
-            if (Math.random() > 0.6) { // 40% Chance flach
-                heldFish = 'shallow';
-                finishCasting();
-            } else {
-                // Warten auf die Tiefe
-                setTimeout(() => {
-                    if (Math.random() > 0.4) { // Chance tief
-                        heldFish = 'deep';
-                    }
-                    finishCasting();
-                }, 800);
-            }
-        }, 600);
+        updateFisher();
+        scoreEl.innerText = score.toString().padStart(2, '0');
     }
 
-    function finishCasting() {
-        isCasting = false;
-        updateDisplay();
+    function checkCatch() {
+        const fisherX = (pos * 12.5) + 6;
+        fishArray.forEach((fish, index) => {
+            if (Math.abs(fish.x - fisherX) < 8) {
+                heldFish = fish.type;
+                fish.el.remove();
+                fishArray.splice(index, 1);
+                playClick(800, 0.1);
+            }
+        });
     }
 
-    // Vogel-Intervall (Gegner-Logik)
-    setInterval(() => {
-        if (Math.random() > 0.7) {
-            birdLevel++;
-            if (birdLevel > 2) {
-                if (score > 0) {
-                    score--;
-                    alert("Der Reiher hat einen Fisch geklaut!");
-                }
-                birdLevel = 0;
+    // Fisch-Management
+    function spawnFish() {
+        if (fishArray.length < 3) {
+            const el = document.createElement('div');
+            el.className = 'sprite fish';
+            el.innerText = '🐟';
+            elementsLayer.appendChild(el);
+            fishArray.push({ x: 100, y: Math.random() > 0.5 ? 40 : 10, el: el, type: 'standard' });
+        }
+    }
+
+    function updateGame() {
+        // Fische bewegen
+        fishArray.forEach((fish, i) => {
+            fish.x -= 1.5; // Geschwindigkeit
+            fish.el.style.left = fish.x + "%";
+            fish.el.style.bottom = fish.y + "px";
+            if (fish.x < -10) {
+                fish.el.remove();
+                fishArray.splice(i, 1);
             }
-            updateDisplay();
-        }
-    }, 3000);
+        });
 
-    function updateDisplay() {
-        // Alle Segmente ausblenden
-        document.querySelectorAll('.fisher-seg, .bird-seg, .fish').forEach(el => el.style.display = 'none');
-
-        // Aktuellen Fischer zeigen
-        document.getElementById('f' + currentPos).style.display = 'block';
-
-        // Vogel zeigen
-        if (birdLevel > 0) {
-            document.getElementById('b' + (birdLevel-1)).style.display = 'block';
-        }
-
-        // Gefangenen Fisch zeigen
-        if (heldFish === 'shallow') {
-             const fS = document.getElementById('fish-shallow');
-             fS.style.display = 'block';
-             fS.style.left = (currentPos * 50 + 10) + "px";
-        }
-        if (heldFish === 'deep') {
-             const fD = document.getElementById('fish-deep');
-             fD.style.display = 'block';
-             fD.style.left = (currentPos * 50 + 10) + "px";
+        // Vogel bewegen
+        if (birdPos < -50 && Math.random() > 0.99) birdPos = 110;
+        if (birdPos > -60) {
+            birdPos -= 0.5;
+            if (!document.getElementById('bird')) {
+                const b = document.createElement('div');
+                b.id = 'bird'; b.className = 'sprite bird'; b.innerText = '🦅';
+                elementsLayer.appendChild(b);
+            }
+            const bEl = document.getElementById('bird');
+            bEl.style.left = birdPos + "%";
+            
+            // Vogel klaut Fisch
+            if (Math.abs(birdPos - 50) < 2 && score > 0) {
+                score--;
+                birdPos = -100;
+                scoreEl.innerText = score.toString().padStart(2, '0');
+                alert("Der Reiher hat einen Fisch geklaut!");
+            }
+        } else {
+            if (document.getElementById('bird')) document.getElementById('bird').remove();
         }
 
-        // Score aktualisieren
-        document.getElementById('score-display').innerText = score.toString().padStart(2, '0');
-        
         if (score >= 10) {
-            alert("GEWONNEN! Du hast 10 Fische im Korb.");
+            alert("GEWONNEN!");
             score = 0;
-            updateDisplay();
         }
+
+        requestAnimationFrame(updateGame);
     }
+
+    // Start
+    updateFisher();
+    setInterval(spawnFish, 2000);
+    updateGame();
 </script>
 
 </body>
